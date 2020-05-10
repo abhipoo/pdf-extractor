@@ -1,0 +1,10 @@
+chardet==3.0.4
+cssselect==1.1.0
+lxml==4.5.0
+pdfminer.six==20200124
+pdfquery==0.4.3
+pycryptodome==3.9.6
+pyquery==1.4.1
+roman==3.2
+six==1.14.0
+sortedcontainers==2.1.0
