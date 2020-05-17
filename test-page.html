@@ -1,47 +1,180 @@
 <!DOCTYPE html>
 <html>
-<head>
+<head>	
 	<script type="text/javascript" src="resources/js/pdf.js"></script>
+	<link rel="stylesheet" href="resources/bootstrap/css/bootstrap.min.css">
 </head>
 <body>
-	<canvas id="my_canvas"></canvas>
+	<div class="col-lg-12">
+		<div class="col-lg-7">
+			<canvas id="my_canvas"></canvas>
+		</div>
 
-	<script>
-		pdfjsLib.getDocument('./centrecom-po.pdf').then(doc => {
-			console.log("This file has " + doc._pdfInfo.numPages + " pages");
+		<br>
 
-			doc.getPage(1).then(page => {
-				var myCanvas = document.getElementById("my_canvas");
+		<div class="col-lg-5">
+			<button onclick="drawRect();">Plot boxes</button>
+		</div>	
+	</div>
 
-				var context = myCanvas.getContext("2d"); 
-
-				var viewport = page.getViewport(1);
-
-				myCanvas.width = viewport.width;
-
-				myCanvas.height = viewport.height;
-
-				page.render({
-					canvasContext : context,
-					viewport : viewport
-				});
-			})
-		});
-	</script>
 
 	<script type="text/javascript">
-		function getCursorPosition(canvas, event) {
-			const rect = canvas.getBoundingClientRect()
-			const x = event.clientX - rect.left
-			const y = event.clientY - rect.top
-			console.log("x: " + x + " y: " + y)
-		}
+		function loadJSON(callback) {   
+			var xobj = new XMLHttpRequest();
+			xobj.overrideMimeType("application/json");
+    xobj.open('GET', 'j_data.json', true); // Replace 'my_data' with the path to your file
+    xobj.onreadystatechange = function () {
+    	if (xobj.readyState == 4 && xobj.status == "200") {
+            // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
+            callback(xobj.responseText);
+        }
+    };
+    xobj.send(null);  
+}
 
-		const canvas = document.querySelector('canvas')
-		canvas.addEventListener('mousedown', function(e) {
-			getCursorPosition(canvas, e)
+var rects = []
+
+function init() {
+	
+	loadJSON(function(response) {
+  // Parse JSON string into object
+  var data = JSON.parse(response);
+
+  const canvas = document.getElementById('my_canvas');
+  const ctx = canvas.getContext('2d');
+  
+  //console.log(data)
+  console.log(data["TextLines"].length)
+  console.log(data["TextBoxes"].length)
+
+  ctx.strokeStyle = 'purple';
+
+  for(var i = 0; i < data["TextBoxes"].length; i++){
+  	//console.log(box)
+  	//console.log(data["TextBoxes"][i])
+
+  	var x = data["TextBoxes"][i]["x0"]
+  	var y = data["TextBoxes"][i]["y1"]
+  	var width = data["TextBoxes"][i]["width"]
+  	var height = data["TextBoxes"][i]["height"]
+  	
+  	ctx.strokeRect(x, y, width, height);
+  	//plot(x, y, width, height)
+  }
+
+  ctx.strokeStyle = 'green';
+
+  //maintaining all TextLines boxes in this variable. Will be used later by collides()  
+  rects = data["TextLines"]
+
+  for(var i = 0; i < data["TextLines"].length; i++){
+  	//console.log(box)
+  	//console.log(data["TextLines"][i])
+
+  	var x = data["TextLines"][i]["x0"]
+  	var y = data["TextLines"][i]["y1"]
+  	var width = data["TextLines"][i]["width"]
+  	var height = data["TextLines"][i]["height"]
+  	
+  	ctx.strokeRect(x, y, width, height);
+  	//plot(x, y, width, height)
+  }
+
+  
+
+});
+}
+
+function plot(x, y, width, height){
+	console.log(x)
+	console.log(y)
+	console.log(width)
+	console.log(height)
+	console.log()
+}
+
+</script>
+
+<script>
+	function drawRect(){
+		//const canvas = document.getElementById('my_canvas');
+		//const ctx = canvas.getContext('2d');
+		//ctx.strokeStyle = 'green';
+		//ctx.strokeRect(20, 10, 160, 100);
+		//ctx.strokeRect(233, 183, 50, 10);
+		init();
+		//console.log(data["TextLines"][0]["x0"])
+	}
+</script>
+
+<script>
+	//development pdf : centrecom-po.pdf
+	//test pdf : christine.w@centrecom.com.au~146547~Purchase Order_10021437_20170814_22334PM.pdf
+	pdfjsLib.getDocument('./centrecom-po.pdf').then(doc => {
+		console.log("This file has " + doc._pdfInfo.numPages + " pages");
+
+		doc.getPage(1).then(page => {
+			var myCanvas = document.getElementById("my_canvas");
+
+			var context = myCanvas.getContext("2d"); 
+
+			var viewport = page.getViewport(1);
+
+			myCanvas.width = viewport.width;
+
+			myCanvas.height = viewport.height;
+
+			page.render({
+				canvasContext : context,
+				viewport : viewport
+			});
 		})
-	</script>
+	});
+</script>
+
+<script type="text/javascript">
+	function getCursorPosition(canvas, event) {
+		const rect = canvas.getBoundingClientRect()
+		const x = event.clientX - rect.left
+		const y = event.clientY - rect.top
+		console.log("x: " + x + " y: " + y)
+	}
+
+	const canvas = document.querySelector('canvas')
+	canvas.addEventListener('mousedown', function(e) {
+		getCursorPosition(canvas, e)
+	})
+</script>
+
+<script>
+	//identify which box was clicked
+	function collides(rects, x, y) {
+		var isCollision = false;
+		for (var i = 0, len = rects.length; i < len; i++) {
+			var left = rects[i].x0, right = rects[i].x0+rects[i].width;
+			var top = rects[i].y1, bottom = rects[i].y1+rects[i].height;
+			if (right >= x
+				&& left <= x
+				&& bottom >= y
+				&& top <= y) {
+				isCollision = rects[i];
+		}
+	}
+	return isCollision;
+}
+
+
+var elem = document.getElementById('my_canvas');
+
+elem.addEventListener('click', function(e) {
+	console.log('click: ' + e.offsetX + '/' + e.offsetY);
+	console.log(rects.length)
+	var rect = collides(rects, e.offsetX, e.offsetY);
+	console.log(rect)
+})
+
+
+</script>
 
 </body>
 
